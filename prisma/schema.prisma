@@ -1,0 +1,323 @@
+// The Wood Tag CMS schema.
+// Postgres (Prisma Postgres, managed) is the datasource — see DATABASE_URL
+// in .env. Every model here is written to be provider-agnostic, so moving
+// to a different Postgres host (or back to SQLite for local-only dev) is
+// just a `provider` + `url` change followed by a fresh migration.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Auth ----------
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String    @default("Studio Admin")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  sessions     Session[]
+}
+
+model Session {
+  id          String    @id @default(cuid())
+  tokenHash   String    @unique
+  adminUserId String
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+}
+
+// ---------- Media ----------
+
+model MediaAsset {
+  id        String   @id @default(cuid())
+  url       String
+  filename  String
+  alt       String   @default("")
+  mimeType  String
+  size      Int
+  createdAt DateTime @default(now())
+}
+
+// ---------- Site-wide settings (singleton) ----------
+
+model SiteSettings {
+  id                 Int      @id @default(1)
+  siteName           String   @default("The Wood Tag")
+  siteTagline        String   @default("Where light becomes story.")
+  logoWordmark        String  @default("WOODTAG")
+  faviconEmoji       String   @default("📷")
+  primaryEmail       String   @default("hello@thewoodtag.com")
+  phone              String   @default("+1 (555) 019-2847")
+  address            String   @default("45 Wren Studios, Harbourfront District")
+  businessHours      String   @default("Mon-Sat, 9am-6pm")
+  whatsappUrl        String   @default("")
+  copyrightText      String   @default("The Wood Tag Photography. All rights reserved.")
+  footerQuote        String   @default("Every frame holds a piece of forever.")
+  footerCredit       String   @default("Design & Development, in-house")
+  updatedAt          DateTime @updatedAt
+}
+
+model SocialLink {
+  id        String  @id @default(cuid())
+  platform  String
+  url       String
+  icon      String  @default("camera") // camera | play | linkedin | sparkle
+  visible   Boolean @default(true)
+  sortOrder Int     @default(0)
+}
+
+// ---------- Navigation ----------
+
+model NavigationItem {
+  id        String  @id @default(cuid())
+  label     String
+  url       String
+  location  String // "header" | "footer-explore" | "footer-sessions" | "footer-legal"
+  visible   Boolean @default(true)
+  sortOrder Int     @default(0)
+}
+
+// ---------- Homepage: Hero ----------
+
+model HeroContent {
+  id            Int      @id @default(1)
+  eyebrow       String   @default("Fine Art Portraiture")
+  headingLine   String   @default("Timeless,")
+  headingEmphasis String @default("Portraits")
+  description   String   @default("Every sitting begins with a conversation, not a checklist. We build the light, the mood, and the moment around you, then step back and let it happen.")
+  ctaLabel      String   @default("Catalogue")
+  ctaSubLabel   String   @default("See The Work")
+  ctaUrl        String   @default("/catalogue")
+  stat1Number   String   @default("8")
+  stat1Suffix   String   @default("+")
+  stat1Label    String   @default("Years Behind The Lens")
+  stat2Number   String   @default("600")
+  stat2Suffix   String   @default("+")
+  stat2Label    String   @default("Stories Captured")
+  updatedAt     DateTime @updatedAt
+  slides        HeroSlide[]
+}
+
+model HeroSlide {
+  id        String      @id @default(cuid())
+  heroId    Int         @default(1)
+  hero      HeroContent @relation(fields: [heroId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  alt       String      @default("")
+  sortOrder Int         @default(0)
+}
+
+// ---------- Homepage: About ----------
+
+model AboutContent {
+  id              Int      @id @default(1)
+  eyebrow         String   @default("About Us")
+  headingLine     String   @default("Where")
+  headingEmphasis String   @default("Light")
+  headingLast     String   @default("Lingers")
+  paragraph1      String   @default("The Wood Tag is an independent photography and creative house dedicated to capturing life's milestones with elegance, artistry, and honesty. What began as a single studio room has grown into a home for fine-art portraiture, cinematic videography, and considered styling.")
+  paragraph2      String   @default("From intimate studio sessions to full-scale celebrations, our aim stays the same: to hand you memories worth keeping. Every frame is treated with care because we believe your story deserves to be told beautifully, and remembered as legacy.")
+  ctaPrimaryLabel String   @default("Let's Work Together")
+  ctaPrimaryUrl   String   @default("/contact")
+  ctaLinkLabel    String   @default("View Catalogue")
+  ctaLinkUrl      String   @default("/catalogue")
+  ctaOutlineLabel String   @default("Our Studio Packages")
+  ctaOutlineUrl   String   @default("/studio")
+  updatedAt       DateTime @updatedAt
+  galleryImages   AboutGalleryImage[]
+}
+
+model AboutGalleryImage {
+  id        String       @id @default(cuid())
+  aboutId   Int          @default(1)
+  about     AboutContent @relation(fields: [aboutId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  alt       String       @default("")
+  caption   String       @default("")
+  sortOrder Int          @default(0)
+}
+
+// ---------- Services ("Our Craft") ----------
+
+model Service {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  imageUrl    String
+  imageAlt    String   @default("")
+  published   Boolean  @default(true)
+  featured    Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ---------- Catalogue ----------
+
+model CatalogueCategory {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  title         String
+  description   String
+  coverImageUrl String
+  coverImageAlt String   @default("")
+  published     Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  images        CatalogueImage[]
+}
+
+model CatalogueImage {
+  id         String            @id @default(cuid())
+  categoryId String
+  category   CatalogueCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  imageUrl   String
+  alt        String            @default("")
+  sortOrder  Int               @default(0)
+}
+
+// ---------- Studio packages ----------
+
+model StudioPackage {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  duration    String
+  price       String
+  hourlyLabel String
+  description String
+  imageUrl    String
+  imageAlt    String   @default("")
+  category    String   @default("Studio")
+  published   Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model StudioPageContent {
+  id              Int      @id @default(1)
+  eyebrow         String   @default("Studio")
+  heading         String   @default("Studio")
+  headingEmphasis String   @default("Packages")
+  description     String   @default("The Wood Tag is a modern, creative space designed for photography, art, and visual storytelling. With a welcoming environment, professional setup, and a focus on craft, we provide the perfect backdrop for bringing your ideas to life.")
+  ctaOutlineLabel String   @default("Read Terms & Conditions")
+  ctaOutlineUrl   String   @default("/portrait-terms")
+  ctaPrimaryLabel String   @default("Book Now")
+  ctaPrimaryUrl   String   @default("/studio")
+  updatedAt       DateTime @updatedAt
+  views           StudioView[]
+}
+
+model StudioView {
+  id        String            @id @default(cuid())
+  pageId    Int               @default(1)
+  page      StudioPageContent @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  alt       String            @default("")
+  caption   String            @default("")
+  sortOrder Int               @default(0)
+}
+
+model StudioAddon {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  spec        String
+  description String
+  imageUrl    String
+  imageAlt    String   @default("")
+  published   Boolean  @default(true)
+  sortOrder   Int      @default(0)
+}
+
+// ---------- Contact ----------
+
+model ContactPageContent {
+  id            Int      @id @default(1)
+  eyebrow       String   @default("General Enquiry")
+  headingLine   String   @default("Ready to tell")
+  headingEmphasis String @default("your story?")
+  description   String   @default("Every session starts with a conversation. Share a few details below and the studio will follow up to shape the rest.")
+  successHeading String  @default("Enquiry sent")
+  successMessage String  @default("Thank you, {firstName}. The studio will reply to {email} within one business day.")
+  updatedAt     DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String
+  phone     String
+  service   String
+  vision    String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ---------- Booking ----------
+
+model BookingSettings {
+  id                    Int      @id @default(1)
+  openDays              String   @default("1,2,3,4,5,6") // 0=Sun..6=Sat, csv
+  timeSlots             String   @default("9:00 AM,11:00 AM,1:00 PM,3:00 PM,5:00 PM") // csv
+  minNoticeHours        Int      @default(24)
+  maxAdvanceDays        Int      @default(60)
+  confirmationMessage   String   @default("We've sent a confirmation to {email}. Your reference is {reference} — save it to look up your booking and receipt at any time.")
+  cancellationMessage   String   @default("Deposits are non-refundable. Clients may reschedule once with at least 48 hours' notice.")
+  lookupHeading         String   @default("Look up your booking and receipt.")
+  lookupDescription     String   @default("Enter the booking reference from your confirmation email. You will see payment instructions if a balance is due, and your receipt on the same page after payment is confirmed.")
+  addOns                String   @default("Extra Hour:100,Extra Outfit Change:50,Printed Album:200,Videography Add-on:300") // "name:price" csv
+  updatedAt             DateTime @updatedAt
+}
+
+model Booking {
+  id            String   @id @default(cuid())
+  reference     String   @unique
+  clientName    String
+  email         String
+  phone         String
+  packageTitle  String
+  date          String // ISO yyyy-mm-dd
+  time          String
+  status        String   @default("pending") // pending | confirmed | completed | cancelled
+  total         Int
+  balanceDue    Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ---------- Legal pages ----------
+
+model LegalPage {
+  id          String   @id @default(cuid())
+  slug        String   @unique // privacy | refund-cancellation | portrait-terms
+  eyebrow     String   @default("The Wood Tag")
+  title       String
+  description String
+  sectionsJson String  @default("[]") // [{ heading, subsections: [{ label, bullets: string[] }] }]
+  updatedAt   DateTime @updatedAt
+}
+
+// ---------- SEO ----------
+
+model SeoSetting {
+  id              String  @id @default(cuid())
+  page            String  @unique // home | services | catalogue | studio | about | contact | pricing | bookings
+  title           String
+  metaDescription String
+  ogTitle         String  @default("")
+  ogDescription   String  @default("")
+  ogImageUrl      String  @default("")
+}
