@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
+import NavigationProgress from "./NavigationProgress";
 
 interface NavLink {
   label: string;
@@ -97,6 +98,8 @@ export default function Header({
             </svg>
           </button>
         </div>
+
+        <NavigationProgress />
       </nav>
 
       <div className={`site-navbar-mobile-panel${menuOpen ? " is-open" : ""}`}>

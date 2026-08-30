@@ -2,8 +2,8 @@
   --page-pad-x: clamp(16px, 5vw, 52px);
   --section-pad-y: clamp(72px, 11vw, 140px);
   --section-pad-y-lg: clamp(96px, 14vw, 200px);
-  --nav-offset: max(52px, calc(env(safe-area-inset-top, 0px) + 44px));
-  --site-main-pad-top: max(56px, calc(env(safe-area-inset-top, 0px) + 48px));
+  --nav-offset: max(62px, calc(env(safe-area-inset-top, 0px) + 54px));
+  --site-main-pad-top: max(66px, calc(env(safe-area-inset-top, 0px) + 58px));
 
   --bg: #f7f3ed;
   --bg-2: #f0ebe1;
